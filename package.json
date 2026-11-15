@@ -1,0 +1,33 @@
+{
+  "name": "financy",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "concurrently -n api,web -c green,blue \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "setup": "node scripts/setup.mjs",
+    "build": "npm run build -w backend && npm run build -w frontend",
+    "test": "npm run test -w backend",
+    "typecheck": "npm run typecheck -w backend && npm run typecheck -w frontend",
+    "demo": "npm run demo -w backend",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:docker": "node scripts/test-docker.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "prettier": "^3.10.1"
+  },
+  "overrides": {
+    "@graphql-tools/utils": "^13.2.2",
+    "graphql-scalars": "^2.0.1"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1"
+  }
+}

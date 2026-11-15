@@ -1,0 +1,90 @@
+name: financy
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: financy
+      POSTGRES_USER: financy
+      POSTGRES_PASSWORD: financy_local
+    ports:
+      - '127.0.0.1:${PG_PORT:-5433}:5432'
+    volumes:
+      - financy-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U financy -d financy']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4000
+      TRUST_PROXY: '1'
+      DATABASE_URL: postgresql://financy:financy_local@db:5432/financy?schema=public
+      DIRECT_URL: postgresql://financy:financy_local@db:5432/financy?schema=public
+      JWT_SECRET_FILE: /data/jwt-secret
+      JWT_SECRET: ${JWT_SECRET:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:${WEB_PORT:-8080},http://127.0.0.1:${WEB_PORT:-8080}}
+    volumes:
+      - financy-config:/data
+    depends_on:
+      db:
+        condition: service_healthy
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 20s
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_BACKEND_URL: /graphql
+    ports:
+      - '127.0.0.1:${WEB_PORT:-8080}:8080'
+    depends_on:
+      backend:
+        condition: service_healthy
+    init: true
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:8080/']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+volumes:
+  financy-postgres:
+  financy-config:

@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+!.env.example
+dist/
+*.tsbuildinfo
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+coverage/
+.DS_Store
