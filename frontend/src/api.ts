@@ -3,9 +3,11 @@ import { QueryClient } from '@tanstack/react-query';
 export const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false } },
 });
-const client = new GraphQLClient(
+const endpoint = new URL(
   import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000/graphql',
+  window.location.origin,
 );
+const client = new GraphQLClient(endpoint.toString());
 export function token() {
   return localStorage.getItem('financy.token') ?? sessionStorage.getItem('financy.token');
 }

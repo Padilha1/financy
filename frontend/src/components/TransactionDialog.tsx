@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { Select } from './Select';
 import { CATEGORIES, errorMessage, request } from '../api';
 import type { Category, Transaction } from '../types';
-import { Button, Feedback, Field, Modal, today } from './ui';
+import { Button, CategoryIcon, Feedback, Field, Modal, today } from './ui';
 const schema = z.object({
   description: z.string().trim().min(1, 'Informe a descrição.').max(150),
   amount: z
@@ -139,18 +140,32 @@ export function TransactionDialog({
           </Field>
         </div>
         <Field id="transaction-category" label="Categoria" error={errors.categoryId?.message}>
-          <select
-            id="transaction-category"
-            {...form.register('categoryId')}
-            aria-invalid={!!errors.categoryId}
-          >
-            <option value="">Selecione</option>
-            {categories.data?.categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <Controller
+            name="categoryId"
+            control={form.control}
+            render={({ field }) => (
+              <Select
+                ref={field.ref}
+                id="transaction-category"
+                name={field.name}
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={categories.isPending ? 'Carregando…' : 'Selecione uma categoria'}
+                disabled={
+                  categories.isPending || categories.isError || !categories.data?.categories.length
+                }
+                invalid={!!errors.categoryId}
+                describedBy={errors.categoryId ? 'transaction-category-error' : undefined}
+                required
+                options={(categories.data?.categories ?? []).map((category) => ({
+                  value: category.id,
+                  label: category.name,
+                  icon: <CategoryIcon category={category} />,
+                }))}
+              />
+            )}
+          />
         </Field>
         {categories.isPending && (
           <p className="hint" role="status">

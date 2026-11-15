@@ -1,10 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, Plus, Search, X } from 'lucide-react';
+import {
+  ArrowDownCircle,
+  ArrowUpCircle,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Search,
+  X,
+} from 'lucide-react';
 import { CATEGORIES, errorMessage, request, TRANSACTIONS } from '../api';
 import type { Category, Filter, Transaction, TransactionPage } from '../types';
-import { Button, EmptyState, ErrorState, Field, IconButton } from '../components/ui';
+import { Button, CategoryIcon, EmptyState, ErrorState, Field, IconButton } from '../components/ui';
+import { Select } from '../components/Select';
 import { TransactionList } from '../components/TransactionList';
 import { TransactionDialog } from '../components/TransactionDialog';
 import { CategoryDialog } from '../components/CategoryDialog';
@@ -80,35 +89,47 @@ export function Transactions() {
           </div>
         </Field>
         <Field id="filter-type" label="Tipo">
-          <select
+          <Select
             id="filter-type"
             value={type}
-            onChange={(e) => {
-              setType(e.target.value);
+            onValueChange={(value) => {
+              setType(value);
               setPage(1);
             }}
-          >
-            <option value="">Todos</option>
-            <option value="INCOME">Entrada</option>
-            <option value="EXPENSE">Saída</option>
-          </select>
+            options={[
+              { value: '', label: 'Todos' },
+              {
+                value: 'INCOME',
+                label: 'Entrada',
+                icon: <ArrowUpCircle size={17} className="income" />,
+              },
+              {
+                value: 'EXPENSE',
+                label: 'Saída',
+                icon: <ArrowDownCircle size={17} className="expense" />,
+              },
+            ]}
+          />
         </Field>
         <Field id="filter-category" label="Categoria">
-          <select
+          <Select
             id="filter-category"
             value={categoryId}
-            onChange={(e) => {
-              setCategory(e.target.value);
+            onValueChange={(value) => {
+              setCategory(value);
               setPage(1);
             }}
-          >
-            <option value="">Todas</option>
-            {cats.data?.categories.map((c) => (
-              <option value={c.id} key={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            disabled={cats.isPending || cats.isError}
+            placeholder={cats.isPending ? 'Carregando…' : 'Todas'}
+            options={[
+              { value: '', label: 'Todas' },
+              ...(cats.data?.categories ?? []).map((category) => ({
+                value: category.id,
+                label: category.name,
+                icon: <CategoryIcon category={category} />,
+              })),
+            ]}
+          />
         </Field>
         <Field id="filter-month" label="Período">
           <input
